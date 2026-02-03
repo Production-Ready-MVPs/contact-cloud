@@ -1,43 +1,31 @@
 import { Users, Handshake, CheckSquare, DollarSign, Plus } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useDashboardStats, useDealsByStage, useTasksByStatus, useRecentActivity } from "@/hooks/useDashboard";
+import { DealsPipelineChart } from "@/components/dashboard/DealsPipelineChart";
+import { TasksCompletionChart } from "@/components/dashboard/TasksCompletionChart";
+import { RevenueChart } from "@/components/dashboard/RevenueChart";
+import { RecentActivityFeed } from "@/components/dashboard/RecentActivityFeed";
+import { StatsCard } from "@/components/dashboard/StatsCard";
 
-const stats = [
-  {
-    title: "Total Contacts",
-    value: "0",
-    change: "Get started",
-    changeType: "neutral" as const,
-    icon: Users,
-  },
-  {
-    title: "Active Deals",
-    value: "0",
-    change: "Add your first deal",
-    changeType: "neutral" as const,
-    icon: Handshake,
-  },
-  {
-    title: "Open Tasks",
-    value: "0",
-    change: "Create a task",
-    changeType: "neutral" as const,
-    icon: CheckSquare,
-  },
-  {
-    title: "Revenue",
-    value: "$0",
-    change: "Close deals to track",
-    changeType: "neutral" as const,
-    icon: DollarSign,
-  },
-];
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+  }).format(value);
+}
 
 export default function Dashboard() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: dealsByStage, isLoading: dealsLoading } = useDealsByStage();
+  const { data: tasksByStatus, isLoading: tasksLoading } = useTasksByStatus();
+  const { data: recentActivity, isLoading: activityLoading } = useRecentActivity();
 
   return (
     <div className="space-y-6">
@@ -49,11 +37,11 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button size="sm">
+          <Button size="sm" onClick={() => navigate("/contacts")}>
             <Plus className="mr-2 h-4 w-4" />
             Add Contact
           </Button>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="outline" onClick={() => navigate("/deals")}>
             <Plus className="mr-2 h-4 w-4" />
             New Deal
           </Button>
@@ -61,34 +49,55 @@ export default function Dashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <stat.icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {stat.change}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        {statsLoading ? (
+          <>
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </>
+        ) : (
+          <>
+            <StatsCard
+              title="Total Contacts"
+              value={stats?.totalContacts.toString() || "0"}
+              description="People in your network"
+              icon={Users}
+            />
+            <StatsCard
+              title="Active Deals"
+              value={stats?.activeDeals.toString() || "0"}
+              description="Deals in progress"
+              icon={Handshake}
+            />
+            <StatsCard
+              title="Open Tasks"
+              value={stats?.openTasks.toString() || "0"}
+              description="Tasks to complete"
+              icon={CheckSquare}
+            />
+            <StatsCard
+              title="Revenue"
+              value={formatCurrency(stats?.totalRevenue || 0)}
+              description="From closed deals"
+              icon={DollarSign}
+            />
+          </>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Revenue Overview</CardTitle>
-            <CardDescription>Monthly revenue for the current year</CardDescription>
+            <CardDescription>Deal values by pipeline stage</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
-              <p className="text-sm text-muted-foreground">
-                Add deals to see revenue chart
-              </p>
-            </div>
+            {dealsLoading ? (
+              <Skeleton className="h-[250px]" />
+            ) : (
+              <RevenueChart data={dealsByStage || []} />
+            )}
           </CardContent>
         </Card>
 
@@ -98,11 +107,15 @@ export default function Dashboard() {
             <CardDescription>Latest updates across your CRM</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
-              <p className="text-sm text-muted-foreground">
-                No recent activity yet
-              </p>
-            </div>
+            {activityLoading ? (
+              <div className="space-y-3">
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+                <Skeleton className="h-12" />
+              </div>
+            ) : (
+              <RecentActivityFeed activities={recentActivity || []} />
+            )}
           </CardContent>
         </Card>
       </div>
@@ -114,25 +127,25 @@ export default function Dashboard() {
             <CardDescription>Current deals by stage</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
-              <p className="text-sm text-muted-foreground">
-                Add deals to see pipeline
-              </p>
-            </div>
+            {dealsLoading ? (
+              <Skeleton className="h-[250px]" />
+            ) : (
+              <DealsPipelineChart data={dealsByStage || []} />
+            )}
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Task Completion</CardTitle>
-            <CardDescription>Tasks completed this week</CardDescription>
+            <CardTitle>Task Status</CardTitle>
+            <CardDescription>Tasks by completion status</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
-              <p className="text-sm text-muted-foreground">
-                Create tasks to track progress
-              </p>
-            </div>
+            {tasksLoading ? (
+              <Skeleton className="h-[250px]" />
+            ) : (
+              <TasksCompletionChart data={tasksByStatus || []} />
+            )}
           </CardContent>
         </Card>
       </div>
