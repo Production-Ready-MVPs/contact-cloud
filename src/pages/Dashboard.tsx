@@ -2,56 +2,50 @@ import { Users, Handshake, CheckSquare, DollarSign, Plus } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
 
 const stats = [
   {
     title: "Total Contacts",
-    value: "1,234",
-    change: "+12%",
-    changeType: "positive" as const,
+    value: "0",
+    change: "Get started",
+    changeType: "neutral" as const,
     icon: Users,
   },
   {
     title: "Active Deals",
-    value: "56",
-    change: "+8%",
-    changeType: "positive" as const,
+    value: "0",
+    change: "Add your first deal",
+    changeType: "neutral" as const,
     icon: Handshake,
   },
   {
     title: "Open Tasks",
-    value: "23",
-    change: "-5%",
-    changeType: "negative" as const,
+    value: "0",
+    change: "Create a task",
+    changeType: "neutral" as const,
     icon: CheckSquare,
   },
   {
     title: "Revenue",
-    value: "$125,430",
-    change: "+23%",
-    changeType: "positive" as const,
+    value: "$0",
+    change: "Close deals to track",
+    changeType: "neutral" as const,
     icon: DollarSign,
   },
 ];
 
-const recentActivity = [
-  { id: 1, action: "New contact added", name: "John Smith", time: "2 minutes ago" },
-  { id: 2, action: "Deal moved to Proposal", name: "Acme Corp", time: "15 minutes ago" },
-  { id: 3, action: "Task completed", name: "Follow up with Sarah", time: "1 hour ago" },
-  { id: 4, action: "New contact added", name: "Jane Doe", time: "2 hours ago" },
-  { id: 5, action: "Deal closed won", name: "TechStart Inc", time: "3 hours ago" },
-];
-
 export default function Dashboard() {
+  const { profile } = useAuth();
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your CRM.
+            Welcome back{profile?.full_name ? `, ${profile.full_name}` : ""}! Here's what's happening with your CRM.
           </p>
         </div>
         <div className="flex gap-2">
@@ -75,12 +69,9 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
-              <Badge
-                variant={stat.changeType === "positive" ? "default" : "destructive"}
-                className="mt-1"
-              >
-                {stat.change} from last month
-              </Badge>
+              <p className="text-xs text-muted-foreground mt-1">
+                {stat.change}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -95,7 +86,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
               <p className="text-sm text-muted-foreground">
-                Chart will be displayed here
+                Add deals to see revenue chart
               </p>
             </div>
           </CardContent>
@@ -107,27 +98,10 @@ export default function Dashboard() {
             <CardDescription>Latest updates across your CRM</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={activity.id}>
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1 space-y-1">
-                      <p className="text-sm font-medium leading-none">
-                        {activity.action}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {activity.name}
-                      </p>
-                    </div>
-                    <p className="text-xs text-muted-foreground whitespace-nowrap">
-                      {activity.time}
-                    </p>
-                  </div>
-                  {index < recentActivity.length - 1 && (
-                    <Separator className="mt-4" />
-                  )}
-                </div>
-              ))}
+            <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
+              <p className="text-sm text-muted-foreground">
+                No recent activity yet
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -142,7 +116,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
               <p className="text-sm text-muted-foreground">
-                Pipeline chart will be displayed here
+                Add deals to see pipeline
               </p>
             </div>
           </CardContent>
@@ -156,7 +130,7 @@ export default function Dashboard() {
           <CardContent>
             <div className="flex h-[200px] items-center justify-center rounded-md border border-dashed">
               <p className="text-sm text-muted-foreground">
-                Task chart will be displayed here
+                Create tasks to track progress
               </p>
             </div>
           </CardContent>
