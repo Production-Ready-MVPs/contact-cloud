@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
-import { Bell, Moon, Sun, LogOut, User, Settings } from "lucide-react";
+import { Bell, Moon, Sun, LogOut, User, Settings, UserPlus, DollarSign, CheckSquare, TrendingUp, TrendingDown } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useQuery } from "@tanstack/react-query";
+import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -17,7 +19,9 @@ import {
 } from "@/components/ui/command";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export function AppHeader() {
@@ -25,10 +29,60 @@ export function AppHeader() {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
 
+  // Fetch recent activity for notifications
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const { data, error } = await supabase
+        .from("activity_log")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id,
+  });
+
+  const unreadCount = notifications.length > 5 ? 5 : notifications.length;
+
   const handleSignOut = async () => {
     await signOut();
     toast.success("Signed out successfully");
     navigate("/auth");
+  };
+
+  const getActivityIcon = (entityType: string, action: string) => {
+    if (action === "won") return <TrendingUp className="h-4 w-4 text-green-500" />;
+    if (action === "lost") return <TrendingDown className="h-4 w-4 text-red-500" />;
+    if (entityType === "contact") return <UserPlus className="h-4 w-4 text-blue-500" />;
+    if (entityType === "deal") return <DollarSign className="h-4 w-4 text-amber-500" />;
+    if (entityType === "task") return <CheckSquare className="h-4 w-4 text-purple-500" />;
+    return <Bell className="h-4 w-4" />;
+  };
+
+  const getActivityMessage = (notification: any) => {
+    const metadata = notification.metadata as Record<string, any> || {};
+    const name = metadata.name || metadata.title || "Item";
+    
+    switch (notification.action) {
+      case "created":
+        return `New ${notification.entity_type}: ${name}`;
+      case "updated":
+        return `Updated ${notification.entity_type}: ${name}`;
+      case "won":
+        return `Deal won: ${name}`;
+      case "lost":
+        return `Deal lost: ${name}`;
+      case "stage_changed":
+        return `${name} moved to ${metadata.to}`;
+      case "completed":
+        return `Task completed: ${name}`;
+      default:
+        return `${notification.action}: ${name}`;
+    }
   };
 
   const getInitials = () => {
@@ -67,13 +121,68 @@ export function AppHeader() {
           <span className="sr-only">Toggle theme</span>
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-4 w-4" />
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-            3
-          </span>
-          <span className="sr-only">Notifications</span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-4 w-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+                  {unreadCount}
+                </span>
+              )}
+              <span className="sr-only">Notifications</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-80" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Notifications</span>
+                <span className="text-xs text-muted-foreground">
+                  {notifications.length} recent
+                </span>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <ScrollArea className="h-[300px]">
+              {notifications.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No notifications yet
+                </div>
+              ) : (
+                notifications.map((notification: any) => (
+                  <DropdownMenuItem
+                    key={notification.id}
+                    className="flex items-start gap-3 p-3 cursor-pointer"
+                    onClick={() => {
+                      if (notification.entity_type === "contact") navigate("/contacts");
+                      else if (notification.entity_type === "deal") navigate("/deals");
+                      else if (notification.entity_type === "task") navigate("/tasks");
+                    }}
+                  >
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted">
+                      {getActivityIcon(notification.entity_type, notification.action)}
+                    </div>
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm leading-none">
+                        {getActivityMessage(notification)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </ScrollArea>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="justify-center text-sm font-medium"
+              onClick={() => navigate("/dashboard")}
+            >
+              View all activity
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
