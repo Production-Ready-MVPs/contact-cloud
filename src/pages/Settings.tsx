@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { CustomFieldsBuilder } from "@/components/settings/CustomFieldsBuilder";
 
 export default function Settings() {
   return (
@@ -196,16 +197,7 @@ export default function Settings() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex h-[300px] items-center justify-center rounded-md border border-dashed">
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Custom fields builder will be available here
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    (Requires admin role)
-                  </p>
-                </div>
-              </div>
+              <CustomFieldsBuilder />
             </CardContent>
           </Card>
         </TabsContent>
