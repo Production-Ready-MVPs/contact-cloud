@@ -101,7 +101,9 @@ export function AppHeader() {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="h-6" />
       
-      <GlobalSearch />
+      <div className="flex-1">
+        <GlobalSearch />
+      </div>
 
       <div className="flex items-center gap-2">
         <Button
