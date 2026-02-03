@@ -13,13 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Command,
-  CommandInput,
-} from "@/components/ui/command";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { GlobalSearch } from "./GlobalSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -104,11 +101,7 @@ export function AppHeader() {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="h-6" />
       
-      <div className="flex-1">
-        <Command className="rounded-lg border shadow-sm max-w-md">
-          <CommandInput placeholder="Search contacts, deals, tasks..." className="h-9" />
-        </Command>
-      </div>
+      <GlobalSearch />
 
       <div className="flex items-center gap-2">
         <Button
